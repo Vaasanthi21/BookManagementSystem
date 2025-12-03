@@ -72,7 +72,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js"></script>
 
   <script>
-    
+    console.log("Firebase initialized:", firebase.apps.length > 0);
     const firebaseConfig = {
       apiKey: "AIzaSyAIldg6L0t3rZHRzg3v8WShWJI4rrE-1V0",
       authDomain: "bookmanagementsystem-23f99.firebaseapp.com",
@@ -105,7 +105,29 @@
     }
 
     
-    db.collection("books").onSnapshot(renderBooks);
+    
+    db.collection("books").onSnapshot(snapshot => {
+    console.log("Snapshot received:", snapshot.size); // ✅ Should show number of books
+    const container = document.getElementById("book-container");
+    container.innerHTML = "";
+    snapshot.forEach(doc => {
+      const book = doc.data();
+      console.log("Rendering book:", book); // ✅ Check each book
+      const card = document.createElement("div");
+      card.className = "book-card";
+      card.innerHTML = `
+        <img src="${book.coverImageURL}" alt="Cover" />
+        <h3>${book.title}</h3>
+        <p>Author: ${book.author}</p>
+        <p>Price: ₹${book.price}</p>
+        <button onclick="updateAuthor('${doc.id}')">Update Author</button>
+        <button onclick="deleteBook('${doc.id}')">Delete</button>
+        <button onclick="viewDetails('${doc.id}')">View Details</button>
+      `;
+      container.appendChild(card);
+    });
+  });
+
 
    
     document.getElementById("add-book-form").addEventListener("submit", e => {
@@ -117,9 +139,26 @@
         price: parseInt(form.price.value),
         coverImageURL: form.coverImageURL.value,
       };
-      db.collection("books").add(newBook);
-      form.reset();
-    });
+      document.getElementById("add-book-form").addEventListener("submit", e => {
+      e.preventDefault();
+      console.log("Form submitted"); // ✅ Check this appears
+      const form = e.target;
+      const newBook = {
+        title: form.title.value,
+        author: form.author.value,
+        price: parseInt(form.price.value),
+        coverImageURL: form.coverImageURL.value,
+      };
+      console.log("Book to add:", newBook); // ✅ Check values
+      db.collection("books").add(newBook).then(() => {
+        console.log("Book added to Firestore"); // ✅ Confirm write
+        form.reset();
+      }).catch(error => {
+        console.error("Error adding book:", error); // 🔴 If write fails
+        });
+      });
+
+    
 
    
     function updateAuthor(id) {
