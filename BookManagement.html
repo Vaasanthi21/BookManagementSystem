@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Management App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      margin: 0;
+    }
+   
+    #sidebar {
+      width: 250px;
+      background: #f4f4f4;
+      padding: 20px;
+      border-right: 1px solid #ccc;
+    }
+    #add-book-form input, #add-book-form button {
+      width: 100%;
+      margin: 5px 0;
+      padding: 8px;
+    }
+   
+    #book-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      padding: 20px;
+    }
+    .book-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .book-card img {
+      max-width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .book-card button {
+      margin: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+ 
+  <div id="sidebar">
+    <h2>Add Book</h2>
+    <form id="add-book-form">
+      <input name="title" placeholder="Title" required />
+      <input name="author" placeholder="Author" required />
+      <input name="price" type="number" placeholder="Price" required />
+      <input name="coverImageURL" placeholder="Image URL" required />
+      <button type="submit">Add Book</button>
+    </form>
+  </div>
+
+ 
+  <div id="book-container"></div>
+
+ 
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js"></script>
+
+  <script>
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIldg6L0t3rZHRzg3v8WShWJI4rrE-1V0",
+      authDomain: "bookmanagementsystem-23f99.firebaseapp.com",
+      projectId: "bookmanagementsystem-23f99",
+    };
+
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+   
+    function renderBooks(snapshot) {
+      const container = document.getElementById("book-container");
+      container.innerHTML = "";
+      snapshot.forEach(doc => {
+        const book = doc.data();
+        const card = document.createElement("div");
+        card.className = "book-card";
+        card.innerHTML = `
+          <img src="${book.coverImageURL}" alt="Cover" />
+          <h3>${book.title}</h3>
+          <p>Author: ${book.author}</p>
+          <p>Price: ₹${book.price}</p>
+          <button onclick="updateAuthor('${doc.id}')">Update Author</button>
+          <button onclick="deleteBook('${doc.id}')">Delete</button>
+          <button onclick="viewDetails('${doc.id}')">View Details</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    
+    db.collection("books").onSnapshot(renderBooks);
+
+   
+    document.getElementById("add-book-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const form = e.target;
+      const newBook = {
+        title: form.title.value,
+        author: form.author.value,
+        price: parseInt(form.price.value),
+        coverImageURL: form.coverImageURL.value,
+      };
+      db.collection("books").add(newBook);
+      form.reset();
+    });
+
+   
+    function updateAuthor(id) {
+      const newAuthor = prompt("Enter new author name:");
+      if (newAuthor) {
+        db.collection("books").doc(id).update({ author: newAuthor });
+      }
+    }
+
+   
+    function deleteBook(id) {
+      db.collection("books").doc(id).delete();
+    }
+
+   
+    function viewDetails(id) {
+      db.collection("books").doc(id).get().then(doc => {
+        const book = doc.data();
+        alert(`Title: ${book.title}\nAuthor: ${book.author}\nPrice: ₹${book.price}`);
+      });
+    }
+  </script>
+</body>
+</html>
